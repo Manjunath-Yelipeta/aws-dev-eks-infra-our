@@ -49,7 +49,7 @@ resource "aws_security_group_rule" "public_alb_https" {
   to_port           = 443
   protocol          = "tcp"
   cidr_blocks = ["0.0.0.0/0"]
-  security_group_id = local.frontend_alb_sg_id
+  security_group_id = local.public_alb_sg_id
 }
 
 resource "aws_security_group_rule" "public_alb_http" {
@@ -58,7 +58,7 @@ resource "aws_security_group_rule" "public_alb_http" {
   to_port           = 80
   protocol          = "tcp"
   cidr_blocks = ["0.0.0.0/0"]
-  security_group_id = local.frontend_alb_sg_id
+  security_group_id = local.public_alb_sg_id
 }
 
 # Bastion
@@ -71,15 +71,7 @@ resource "aws_security_group_rule" "bastion_my_public_ip" {
   security_group_id = local.bastion_sg_id
 }
 
-# Bastion
-resource "aws_security_group_rule" "eks_control_plane_bastion" {
-  type              = "ingress"
-  from_port         = 22
-  to_port           = 22
-  protocol          = "tcp"
-  source_security_group_id = local.bastion.sg_id
-  security_group_id = local.eks_control_plane.sg_id
-}
+
 
 
 resource "aws_security_group_rule" "eks_control_plane_eks_node" {
@@ -87,8 +79,8 @@ resource "aws_security_group_rule" "eks_control_plane_eks_node" {
   from_port         = 0
   to_port           = 0
   protocol          = "-1"
-  source_security_group_id = local.eks_node.sg_id
-  security_group_id = local.eks_control_plane.sg_id
+  source_security_group_id = local.eks_node_sg_id
+  security_group_id = local.eks_control_plane_sg_id
 }
 
 resource "aws_security_group_rule" "eks_node_eks_control_plane" {
@@ -96,8 +88,8 @@ resource "aws_security_group_rule" "eks_node_eks_control_plane" {
   from_port         = 0
   to_port           = 0
   protocol          = "-1"
-  source_security_group_id = local.eks_control_plane.sg_id
-  security_group_id = local.eks_node.sg_id
+  source_security_group_id = local.eks_control_plane_sg_id
+  security_group_id = local.eks_node_sg_id
 }
 
 resource "aws_security_group_rule" "eks_node_vpc" {
@@ -106,7 +98,15 @@ resource "aws_security_group_rule" "eks_node_vpc" {
   to_port           = 0
   protocol          = "-1"
   cidr_blocks = ["10.0.0.0/16"]
-  security_group_id = local.eks_node.sg_id
+  security_group_id = local.eks_node_sg_id
 }
 
+resource "aws_security_group_rule" "eks_control_plane_bastion" {
+  type              = "ingress"
+  from_port         = 443
+  to_port           = 443
+  protocol          = "tcp"
+  source_security_group_id = local.bastion_sg_id
+  security_group_id = local.eks_control_plane_sg_id
+}
 
